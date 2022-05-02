@@ -1,17 +1,42 @@
-import Player from '@vimeo/player';
 import throttle from 'lodash.throttle';
 
-const KEY = 'videoplayer-current-time';
+const KEY = 'feedback-form-state';
+const formData = {};
 
-const player = new Player('vimeo-player');
-const key = localStorage.getItem(KEY);
-if (key) {
-  player.setCurrentTime(parseFloat(key));
+const form = document.querySelector('.feedback-form');
+
+form.addEventListener('submit', onFormSubmit);
+form.addEventListener('input', throttle(onFormInput, 500));
+
+updateForm();
+
+function updateForm() {
+  const savedData = localStorage.getItem(KEY);
+  if (savedData) {
+    const { email, message } = JSON.parse(savedData);
+    form.email.value = email;
+    form.message.value = message;
+    formData.email = email;
+    formData.message = message;
+  }
 }
 
-player.on(
-  'timeupdate',
-  throttle(data => {
-    localStorage.setItem(KEY, data.seconds.toString());
-  }, 1000),
-);
+function onFormInput(event) {
+  formData.email = form.elements.email.value;
+  formData.message = form.elements.message.value;
+  localStorage.setItem(KEY, JSON.stringify(formData));
+}
+
+function onFormSubmit(event) {
+  event.preventDefault();
+
+  const formDataToSend = new FormData(event.currentTarget);
+  formDataToSend.forEach((value, name) => {
+    formData[name] = value;
+  });
+
+  event.currentTarget.reset();
+  localStorage.removeItem(KEY);
+
+  console.log(formData);
+}
